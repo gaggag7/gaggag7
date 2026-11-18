@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나만의 카페 경영 시뮬레이션</title>
+<style>
+  :root { --coffee:#7b5038; --cream:#fffaf3; --ink:#34271f; --muted:#806f62; --green:#7b9877; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:24px; font-family:Arial,"Noto Sans KR",sans-serif; background:#f5eee5; color:var(--ink); }
+  .app { max-width:900px; margin:0 auto; }
+  header { padding:28px; border-radius:22px; color:white; background:linear-gradient(135deg,#76503b,#b88762); box-shadow:0 8px 24px #6e4b3020; }
+  header .eyebrow { margin:0 0 8px; font-size:13px; letter-spacing:2px; opacity:.85; }
+  h1 { margin:0; font-size:clamp(24px,5vw,34px); }
+  header p { margin:10px 0 0; line-height:1.6; opacity:.92; }
+  .layout { display:grid; grid-template-columns:1fr 1.1fr; gap:18px; margin-top:18px; }
+  .panel { background:var(--cream); border:1px solid #eadccd; border-radius:20px; padding:22px; box-shadow:0 5px 18px #6e4b3010; }
+  h2 { margin:0 0 18px; font-size:19px; }
+  .field { margin:17px 0; }
+  label { display:block; margin-bottom:8px; font-weight:700; font-size:14px; }
+  .input-wrap { display:flex; align-items:center; gap:8px; background:white; border:1px solid #ddcbbb; border-radius:12px; padding:0 13px; }
+  input { width:100%; min-width:0; border:0; outline:0; padding:13px 0; font-size:17px; color:var(--ink); background:transparent; }
+  .unit { color:var(--muted); font-size:14px; white-space:nowrap; }
+  .hint { color:var(--muted); font-size:12px; margin-top:6px; }
+  .results { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .result { background:#fff; border-radius:14px; padding:15px; border:1px solid #eee1d4; }
+  .result.primary { grid-column:1/-1; background:#f1e6d9; }
+  .result span { display:block; color:var(--muted); font-size:13px; }
+  .result strong { display:block; margin-top:8px; font-size:clamp(19px,3vw,25px); color:var(--coffee); overflow-wrap:anywhere; }
+  .chart { margin-top:20px; }
+  .bar-row { display:grid; grid-template-columns:92px 1fr auto; align-items:center; gap:10px; margin:14px 0; font-size:13px; }
+  .track { height:14px; border-radius:20px; background:#eee5dc; overflow:hidden; }
+  .bar { height:100%; border-radius:20px; min-width:0; background:var(--coffee); transition:width .2s; }
+  .bar.profit { background:var(--green); }
+  .note { margin:18px 2px 0; color:var(--muted); font-size:12px; line-height:1.6; }
+  button { border:0; border-radius:12px; background:var(--coffee); color:white; padding:12px 16px; font-weight:700; cursor:pointer; }
+  button:hover { filter:brightness(1.08); }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:18px; }
+  @media(max-width:680px) { body{padding:14px;} .layout{grid-template-columns:1fr;} .panel{padding:18px;} header{padding:23px;} }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <p class="eyebrow">MY LITTLE CAFE</p>
+    <h1>☕ 나만의 카페 경영 시뮬레이션</h1>
+    <p>음료 가격과 재료비, 하루 판매량을 바꾸며 카페의 예상 매출과 이익을 확인해 보세요.</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <h2>🧾 카페 운영 조건</h2>
+      <div class="field">
+        <label for="price">커피 한 잔 판매 가격</label>
+        <div class="input-wrap"><input id="price" type="number" min="0" step="100" value="4000"><span class="unit">원</span></div>
+      </div>
+      <div class="field">
+        <label for="cost">커피 한 잔 재료비</label>
+        <div class="input-wrap"><input id="cost" type="number" min="0" step="100" value="1500"><span class="unit">원</span></div>
+      </div>
+      <div class="field">
+        <label for="sales">하루 예상 판매량</label>
+        <div class="input-wrap"><input id="sales" type="number" min="0" step="1" value="50"><span class="unit">잔</span></div>
+      </div>
+      <div class="actions">
+        <button id="reset" type="button">기본값으로 초기화</button>
+      </div>
+      <p class="hint">0 이상의 숫자를 입력해 주세요.</p>
+    </section>
+
+    <section class="panel">
+      <h2>📊 하루 예상 운영 결과</h2>
+      <div class="results">
+        <div class="result primary"><span>하루 예상 매출</span><strong id="revenue">200,000원</strong></div>
+        <div class="result"><span>전체 재료비</span><strong id="totalCost">75,000원</strong></div>
+        <div class="result"><span>재료비 제외 이익</span><strong id="profit">125,000원</strong></div>
+      </div>
+      <div class="chart">
+        <h2>매출과 이익 비교</h2>
+        <div class="bar-row"><span>하루 매출</span><div class="track"><div class="bar" id="revenueBar" style="width:100%"></div></div><b id="revenueLabel">200,000원</b></div>
+        <div class="bar-row"><span>재료비 제외 이익</span><div class="track"><div class="bar profit" id="profitBar" style="width:62.5%"></div></div><b id="profitLabel">125,000원</b></div>
+      </div>
+      <p class="note">※ 이 결과는 입력한 조건에 따른 단순 계산입니다. 임대료, 인건비, 전기료 등 다른 비용은 포함하지 않으며 실제 매출을 예측하는 자료가 아닙니다.</p>
+    </section>
+  </main>
+</div>
+<script>
+(() => {
+  const price = document.getElementById('price');
+  const cost = document.getElementById('cost');
+  const sales = document.getElementById('sales');
+  const won = n => `${Math.round(n).toLocaleString('ko-KR')}원`;
+  const valid = el => Math.max(0, Number(el.value) || 0);
+
+  function update() {
+    const p = valid(price), c = valid(cost), s = valid(sales);
+    const revenue = p * s;
+    const totalCost = c * s;
+    const profit = revenue - totalCost;
+    document.getElementById('revenue').textContent = won(revenue);
+    document.getElementById('totalCost').textContent = won(totalCost);
+    document.getElementById('profit').textContent = won(profit);
+    document.getElementById('revenueLabel').textContent = won(revenue);
+    document.getElementById('profitLabel').textContent = won(profit);
+    const max = Math.max(Math.abs(revenue), Math.abs(profit), 1);
+    document.getElementById('revenueBar').style.width = `${Math.max(0, revenue / max * 100)}%`;
+    document.getElementById('profitBar').style.width = `${Math.max(0, profit / max * 100)}%`;
+  }
+  [price, cost, sales].forEach(el => el.addEventListener('input', update));
+  document.getElementById('reset').addEventListener('click', () => {
+    price.value = 4000; cost.value = 1500; sales.value = 50; update();
+  });
+  update();
+})();
+</script>
+</body>
+</html>
